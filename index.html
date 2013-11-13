@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+      <script type='text/javascript' src="http://documentcloud.github.com/underscore/underscore-min.js"></script>
+</head>
+<body>
+  <script>
+		var random = function(min, max) {
+		    return Math.random() * (max - min) + min;
+		};
+
+		var mean = function(array) {
+			return _.reduce(
+				array, 
+				function(memo, value) {
+					return memo + value;
+				}, 
+				0) / 
+			_.size(array);
+		};
+
+		var stdev = function(array) {
+			var sum = _.reduce(
+				array, 
+				function(memo, value) {
+					return memo + Math.pow(value - mean(array), 2);
+				},
+				0
+			);
+
+			return Math.sqrt((1 / (_.size(array)-1)) * sum);
+		};
+
+		function round(a, b) {
+			b=b || 0;
+		 	return Math.round(a*Math.pow(10,b))/Math.pow(10,b);
+		};
+
+		var check = function(col, defaultValue) {
+			return col <= defaultValue && col >= (defaultValue * -1)
+		};
+
+		function getStatsPipets(massa, massa1, massa2, col5Default, col6Default) {
+			/*
+			col1 = [
+				0.0205,
+				0.0204,
+				0.0201,
+				0.0204,
+				0.0203,
+				0.0202,
+				0.0204,
+				0.0203,
+				0.0205,
+				0.0202
+			];
+			*/
+
+			var iteration = 0;
+			do {
+				iteration++;
+			
+				var col1 = [];
+				
+				
+				for(var i = 1; i<=10; i++) {
+					col1.push(round(random(massa + massa1, massa + massa2), 4));
+				}
+
+				var col2 = _.map(col1, function(value) {
+					return value / 1.0033;
+				});
+
+				var col3 = mean(col2);
+
+				var col4 = col3 - 0.02;
+				var col5 = col4*100/0.02;
+				var col6 = stdev(col2) * 100 / col3;
+			} while(iteration<10000 || (check(col5, col5Default) && check(col6, col6Default)))
+
+			return {
+				col1: col1,
+				col2: col2,
+				col3: round(col3, 4),
+				col4: round(col4, 4),
+				col5: round(col5, 2),
+				col6: round(col6, 2),
+				col5Check: check(col5, col5Default),
+				col6Check: check(col6, col6Default)
+			};
+		};
+
+		console.info(getStatsPipets(0.02, 0.0001, 0.0005, 2.5, 0.7));
+
+	</script>
+</body>
+</html>
+
