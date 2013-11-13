@@ -1,10 +1,41 @@
 <!DOCTYPE html>
 <html>
 <head>
-      <script type='text/javascript' src="http://documentcloud.github.com/underscore/underscore-min.js"></script>
+	<meta charset="utf-8">
+
+    <script src="http://documentcloud.github.com/underscore/underscore-min.js"></script>
+    <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+    <style>
+    	#data {
+      		border: 3px solid black;
+      		border-collapse: collapse;
+      	}
+      	
+      	#data td {
+      		border: 3px solid black;
+      		font-size: 25px;
+      		padding: 15px;
+      	}
+
+      	#data.green, #data.green td{
+  			border: 3px solid green;
+      	}
+
+      	#data.red, #data.red td{
+  			border: 3px solid red;
+      	}
+    </style>
 </head>
 <body>
-  <script>
+	<button id="generate">generate!</button>
+	<input id="massa" value="0.02">
+	<input id="massa1" value="0.0001">
+	<input id="massa2" value="0.0015">
+	<input id="col5Default" value="2.5">
+	<input id="col6Default" value="0.7">
+	<div id="iterations"></div>
+	<table id="data"></table>
+  	<script>
 		var random = function(min, max) {
 		    return Math.random() * (max - min) + min;
 		};
@@ -76,9 +107,10 @@
 				var col4 = col3 - 0.02;
 				var col5 = col4*100/0.02;
 				var col6 = stdev(col2) * 100 / col3;
-			} while(iteration<10000 || (check(col5, col5Default) && check(col6, col6Default)))
+			} while(!(check(col5, col5Default) && check(col6, col6Default)) && iteration < 100000)
 
 			return {
+				iteration: iteration,
 				col1: col1,
 				col2: col2,
 				col3: round(col3, 4),
@@ -89,10 +121,59 @@
 				col6Check: check(col6, col6Default)
 			};
 		};
+	</script>
+	<script>
+		$("#generate").click(function() {
+			var data = getStatsPipets(
+				parseFloat($("#massa").val()), 
+				parseFloat($("#massa1").val()), 
+				parseFloat($("#massa2").val()), 
+				parseFloat($("#col5Default").val()), 
+				parseFloat($("#col6Default").val())
+			);
+			var tr = [];
+			_.each(data.col1, function(value, id) {
+				tr[id] = [];
+				tr[id][0] = value;
+			});
 
-		console.info(getStatsPipets(0.02, 0.0001, 0.0005, 2.5, 0.7));
+			_.each(data.col2, function(value, id) {
+				tr[id][1] = round(value, 4);
+			});
 
+			tr[0][2] = data.col3;
+			tr[0][3] = data.col4;
+			tr[0][4] = data.col5;
+			tr[0][5] = data.col6;
+
+			$("#data").html('');
+
+			_.each(tr, function(object, line) {
+				var lineData = '<tr>';
+				lineData += '<td>' + (line + 1) + '</td>';
+				lineData += '<td>' + object[0] + '</td>';
+				lineData += '<td>' + object[1] + '</td>';
+
+				if (line === 0) {
+					lineData += '<td>' + object[2] + '</td>';
+					lineData += '<td>' + object[3] + '</td>';
+					lineData += '<td>' + object[4] + '</td>';
+					lineData += '<td>' + object[5] + '</td>';
+				}
+
+				lineData += '</tr>';
+
+				$("#data").append(lineData);
+			});		
+			console.info(data.col5Check, data.col6Check);
+			if (data.col5Check && data.col6Check) {
+				$("#data").attr('class', 'green');
+			} else {
+				$("#data").attr('class', 'red');
+			}
+
+			$("#iterations").html('Найдено с ' + data.iteration);
+		});
 	</script>
 </body>
 </html>
-
