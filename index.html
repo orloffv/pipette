@@ -28,14 +28,156 @@
 </head>
 <body>
 	<button id="generate">generate!</button>
+	<select id="pipetts"></select>
 	<input id="massa" value="0.02">
-	<input id="massa1" value="0.0001">
-	<input id="massa2" value="0.0015">
+	<input id="massaMin" value="-0.0005">
+	<input id="massaMax" value="0.0005">
 	<input id="col5Default" value="2.5">
 	<input id="col6Default" value="0.7">
 	<div id="iterations"></div>
 	<table id="data"></table>
   	<script>
+  		var fixtures = {
+			'er-200': [
+				{
+					massa: 0.02,
+					col5Default: 2.5,
+					col6Default: 0.7
+				},
+				{
+					massa: 0.1,
+					col5Default: 1,
+					col6Default: 0.3
+				},
+				{
+					massa: 0.2,
+					col5Default: 0.6,
+					col6Default: 0.2
+				}
+			],
+			'er-1000': [
+				{
+					massa: 0.1,
+					col5Default: 3,
+					col6Default: 0.6,
+				},
+				{
+					massa: 0.5,
+					col5Default: 1,
+					col6Default: 0.2,
+				},
+				{
+					massa: 1,
+					col5Default: 0.6,
+					col6Default: 0.2,
+				}
+			],
+			'er-5000': [
+				{
+					massa: 0.5,
+					col5Default: 2.4,
+					col6Default: 1.2,
+				},
+				{
+					massa: 2.5,
+					col5Default: 1.2,
+					col6Default: 0.25,
+				},
+				{
+					massa: 5,
+					col5Default: 0.6,
+					col6Default: 0.15,
+				}
+			],
+			'biohit-1000': [
+				{
+					massa: 0.1,
+					col5Default: 2,
+					col6Default: 0.7,
+				},
+				{
+					massa: 0.5,
+					col5Default: 0.7,
+					col6Default: 0.25,
+				},
+				{
+					massa: 1,
+					col5Default: 0.6,
+					col6Default: 0.2,
+				}
+			],
+			'er-8k': [
+				{
+					massa: 0.3,
+					col5Default: 3,
+					col6Default: 1,
+				},
+				{
+					massa: 0.15,
+					col5Default: 1,
+					col6Default: 0.5,
+				},
+				{
+					massa: 0.3,
+					col5Default: 0.6,
+					col6Default: 0.3,
+				}
+			],
+			'er-12k': [
+				{
+					massa: 0.3,
+					col5Default: 3,
+					col6Default: 1,
+				},
+				{
+					massa: 0.15,
+					col5Default: 1,
+					col6Default: 0.5,
+				},
+				{
+					massa: 0.3,
+					col5Default: 0.6,
+					col6Default: 0.3,
+				}
+			],
+			'biohit-8k': [
+				{
+					massa: 0.05,
+					col5Default: 1.5,
+					col6Default: 0.8,
+				},
+				{
+					massa: 0.3,
+					col5Default: 0.7,
+					col6Default: 0.25,
+				}
+			],
+			'kolor-8': [
+				{
+					massa: 0.05,
+					col5Default: 4.6,
+					col6Default: 1.5,
+				},
+				{
+					massa: 0.3,
+					col5Default: 1,
+					col6Default: 0.3,
+				}
+			],
+			'er-20': [
+				{
+					massa: 0.01,
+					col5Default: 1.2,
+					col6Default: 0.6,
+				},
+				{
+					massa: 0.02,
+					col5Default: 1,
+					col6Default: 0.3,
+				}
+			],
+		};
+
 		var random = function(min, max) {
 		    return Math.random() * (max - min) + min;
 		};
@@ -71,31 +213,15 @@
 			return col <= defaultValue && col >= (defaultValue * -1)
 		};
 
-		function getStatsPipets(massa, massa1, massa2, col5Default, col6Default) {
-			/*
-			col1 = [
-				0.0205,
-				0.0204,
-				0.0201,
-				0.0204,
-				0.0203,
-				0.0202,
-				0.0204,
-				0.0203,
-				0.0205,
-				0.0202
-			];
-			*/
-
+		function getStatsPipets(massa, massaMin, massaMax, col5Default, col6Default) {
 			var iteration = 0;
 			do {
 				iteration++;
 			
 				var col1 = [];
 				
-				
 				for(var i = 1; i<=10; i++) {
-					col1.push(round(random(massa + massa1, massa + massa2), 4));
+					col1.push(round(random(massa + massaMin, massa + massaMax), 4));
 				}
 
 				var col2 = _.map(col1, function(value) {
@@ -104,8 +230,8 @@
 
 				var col3 = mean(col2);
 
-				var col4 = col3 - 0.02;
-				var col5 = col4*100/0.02;
+				var col4 = col3 - massa;
+				var col5 = col4*100/massa;
 				var col6 = stdev(col2) * 100 / col3;
 			} while(!(check(col5, col5Default) && check(col6, col6Default)) && iteration < 100000)
 
@@ -123,11 +249,37 @@
 		};
 	</script>
 	<script>
+		_.each(fixtures, function(pipetts, name) {
+			var pipettHtml = '<optgroup label="' + name +'">';
+			_.each(pipetts, function(pipett) {
+				pipettHtml += '<option value="' + name + '_' + pipett.massa + '">' + pipett.massa + '</option>';
+			});
+			pipettHtml += '</optgroup>';
+			$("#pipetts").append(pipettHtml);
+		});
+
+		$("#pipetts").change(function() {
+			var pipetteValue = $("#pipetts").val();
+			var pipetteValueArray = pipetteValue.split('_');
+			var name = pipetteValueArray[0];
+			var massa = pipetteValueArray[1];
+
+			var pipett = _.find(fixtures[name], function(pipett) {
+				return pipett.massa = massa;
+			});
+
+			$("#massa").val(pipett.massa);
+			$("#col5Default").val(pipett.col5Default);
+			$("#col6Default").val(pipett.col6Default);
+		});
+
+		$("#pipetts").trigger('change');
+
 		$("#generate").click(function() {
 			var data = getStatsPipets(
 				parseFloat($("#massa").val()), 
-				parseFloat($("#massa1").val()), 
-				parseFloat($("#massa2").val()), 
+				parseFloat($("#massaMin").val()), 
+				parseFloat($("#massaMax").val()), 
 				parseFloat($("#col5Default").val()), 
 				parseFloat($("#col6Default").val())
 			);
